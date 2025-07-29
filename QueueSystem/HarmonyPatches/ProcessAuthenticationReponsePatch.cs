@@ -1,6 +1,8 @@
 using CentralAuth;
 using HarmonyLib;
 using LabApi.Features.Wrappers;
+using LabApi.Features.Console;
+using System.Linq;
 
 namespace JoinQueuePatch.HarmonyPatches
 {
@@ -10,8 +12,16 @@ namespace JoinQueuePatch.HarmonyPatches
 	{
 		static bool Prefix(PlayerAuthenticationManager __instance, CentralAuth.AuthenticationResponse msg)
 		{
-			int currentPlayers = Player.List.Count;
+			int currentPlayers = Player.List.Count(p => p.IsReady == true && !p.IsHost);
 			int maxPlayers = Server.MaxPlayers;
+;
+			if (msg.SignedAuthToken.TryGetToken<AuthenticationToken>("Authentication", out var token1, out var error1, out var userId))
+			{
+				if (!string.IsNullOrEmpty(userId))
+				{
+					if (ReservedSlot.HasReservedSlot(userId)) return true;
+				}
+			}
 
 			if (currentPlayers >= maxPlayers)
 			{

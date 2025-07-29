@@ -2,7 +2,6 @@ using HarmonyLib;
 using System.Collections.Generic;
 using CentralAuth;
 using Hints;
-using UnityEngine;
 using MEC;
 using System.Reflection;
 using System.Linq;
@@ -12,6 +11,9 @@ using System;
 using LabApi.Events.Handlers;
 using LabApi.Events.Arguments.PlayerEvents;
 using LabApi.Features.Wrappers;
+using LabApi.Features.Console;
+using UnityEngine;
+using Logger = LabApi.Features.Console.Logger;
 
 namespace JoinQueuePatch
 {
@@ -47,7 +49,7 @@ namespace JoinQueuePatch
 			Timing.KillCoroutines();
 		}
 
-		private void OnPlayerLeft(PlayerLeftEventArgs ev)
+		public void OnPlayerLeft(PlayerLeftEventArgs ev)
 		{
 			if (IsInQueue(ev.Player.ReferenceHub))
 			{
@@ -82,7 +84,8 @@ namespace JoinQueuePatch
 					string hintMessage = messageTemplate
 						.Replace("{queue_count}", Plugin.Instance.WaitingQueue.Count.ToString())
 						.Replace("{position}", position.ToString())
-						.Replace("{round_time}", Round.Duration.ToString(@"mm\:ss"));
+						.Replace("{round_time}", Round.Duration.ToString(@"mm\:ss"))
+						.Replace("{servername}", Server.PlayerListName);
 
 					Plugin.Instance.SendHint(
 						queue.PlayerAuthenticationManager,
@@ -98,10 +101,19 @@ namespace JoinQueuePatch
 		{
 			return WaitingQueue.FirstOrDefault(x => x.PlayerAuthenticationManager._hub == auth._hub) != null;
 		}
-		public bool IsInQueue(ReferenceHub hub)
+		public static bool IsInQueue(ReferenceHub hub)
 		{
-			return WaitingQueue.FirstOrDefault(x => x.PlayerAuthenticationManager._hub == hub) != null;
+			var hubField = AccessTools.Field(typeof(PlayerAuthenticationManager), "_hub");
+			foreach (var item in Instance.WaitingQueue)
+			{
+				var mgr = item.PlayerAuthenticationManager;
+				var managerHub = (ReferenceHub)hubField.GetValue(mgr);
+				if (managerHub == hub)
+					return true;
+			}
+			return false;
 		}
+
 		public void RemoveFromQueue(ReferenceHub hub)
 		{
 			if (WaitingQueue.Count == 0)
@@ -151,9 +163,34 @@ namespace JoinQueuePatch
 			}
 		}
 
+		private static int GetPriority(QueueItem item, Dictionary<string, int> map)
+		{
+			string groupName = null;
+
+			if (item.AuthenticationResponse.SignedAuthToken.TryGetToken<AuthenticationToken>(
+				"Authentication", out var token, out _, out var userId))
+			{
+				var userGroup = ServerStatic.PermissionsHandler.GetUserGroup(userId);
+				groupName = userGroup?.Name;
+			}
+
+			return map.TryGetValue(groupName, out var prio) ? prio : -1;
+		}
+
 		public static void ProcessQueue()
 		{
-			while (Instance.WaitingQueue.Count > 0 && Player.List.Count - 1 < Server.MaxPlayers)
+			var priorityMap = Instance.Config.QueueGroupPriority
+				.Select((grp, idx) => new { grp, idx })
+				.ToDictionary(x => x.grp, x => x.idx);
+
+			var sorted = Instance.WaitingQueue
+				.OrderBy(item => GetPriority(item, priorityMap))
+				.ToList();
+
+			Instance.WaitingQueue = new Queue<QueueItem>(sorted);
+			int activePlayers = Player.List.Count(p => p.IsReady == true && !p.IsHost);
+
+			while (Instance.WaitingQueue.Count > 0 && activePlayers - 1 < Server.MaxPlayers)
 			{
 				var next = Instance.WaitingQueue.Dequeue();
 				var manager = next.PlayerAuthenticationManager;
