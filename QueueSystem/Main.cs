@@ -1,5 +1,3 @@
-using Exiled.API.Features;
-using Exiled.Events.EventArgs.Player;
 using HarmonyLib;
 using System.Collections.Generic;
 using CentralAuth;
@@ -8,36 +6,48 @@ using UnityEngine;
 using MEC;
 using System.Reflection;
 using System.Linq;
+using LabApi.Loader.Features.Plugins;
+using LabApi.Features;
+using System;
+using LabApi.Events.Handlers;
+using LabApi.Events.Arguments.PlayerEvents;
+using LabApi.Features.Wrappers;
 
 namespace JoinQueuePatch
 {
 	public class Plugin : Plugin<Config>
 	{
+		public override string Name { get; } = "QueueSystem";
+		public override string Description { get; } = "No Server full screen anymore.";
+		public override string Author { get; } = "yannikaufdie1";
+		public override Version Version { get; } = new Version(1, 0, 0, 0);
+		public override Version RequiredApiVersion { get; } = new Version(LabApiProperties.CompiledVersion);
+
 		public static Plugin Instance;
 		private Harmony harmony;
 		public Queue<QueueItem> WaitingQueue = new();
 
-		public override void OnEnabled()
+		public override void Enable()
 		{
 			harmony = new Harmony("de.yannik.scpsl.joinqueue");
 			harmony.PatchAll();
-			Exiled.Events.Handlers.Player.Left += OnPlayerLeft;
-			Exiled.Events.Handlers.Server.RoundStarted += OnRoundStart;
+			PlayerEvents.Left += OnPlayerLeft;
+			ServerEvents.RoundStarted += OnRoundStart;
 
 			WaitingQueue = new();
 			Instance = this;
 			Timing.RunCoroutine(QueueHintCoroutine());
 		}
 
-		public override void OnDisabled()
+		public override void Disable()
 		{
 			harmony.UnpatchAll("de.yannik.scpsl.joinqueue");
-			Exiled.Events.Handlers.Player.Left -= OnPlayerLeft;
-			Exiled.Events.Handlers.Server.RoundStarted -= OnRoundStart;
+			PlayerEvents.Left -= OnPlayerLeft;
+			ServerEvents.RoundStarted -= OnRoundStart;
 			Timing.KillCoroutines();
 		}
 
-		private void OnPlayerLeft(LeftEventArgs ev)
+		private void OnPlayerLeft(PlayerLeftEventArgs ev)
 		{
 			if (IsInQueue(ev.Player.ReferenceHub))
 			{
@@ -72,7 +82,7 @@ namespace JoinQueuePatch
 					string hintMessage = messageTemplate
 						.Replace("{queue_count}", Plugin.Instance.WaitingQueue.Count.ToString())
 						.Replace("{position}", position.ToString())
-						.Replace("{round_time}", Round.ElapsedTime.ToString(@"mm\:ss"));
+						.Replace("{round_time}", Round.Duration.ToString(@"mm\:ss"));
 
 					Plugin.Instance.SendHint(
 						queue.PlayerAuthenticationManager,
@@ -143,7 +153,7 @@ namespace JoinQueuePatch
 
 		public static void ProcessQueue()
 		{
-			while (Instance.WaitingQueue.Count > 0 && Player.List.Count - 1 < Server.MaxPlayerCount)
+			while (Instance.WaitingQueue.Count > 0 && Player.List.Count - 1 < Server.MaxPlayers)
 			{
 				var next = Instance.WaitingQueue.Dequeue();
 				var manager = next.PlayerAuthenticationManager;

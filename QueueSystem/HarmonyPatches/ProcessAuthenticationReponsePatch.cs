@@ -1,6 +1,6 @@
 using CentralAuth;
-using Exiled.API.Features;
 using HarmonyLib;
+using LabApi.Features.Wrappers;
 
 namespace JoinQueuePatch.HarmonyPatches
 {
@@ -11,7 +11,7 @@ namespace JoinQueuePatch.HarmonyPatches
 		static bool Prefix(PlayerAuthenticationManager __instance, CentralAuth.AuthenticationResponse msg)
 		{
 			int currentPlayers = Player.List.Count;
-			int maxPlayers = Server.MaxPlayerCount;
+			int maxPlayers = Server.MaxPlayers;
 
 			if (currentPlayers >= maxPlayers)
 			{

@@ -1,9 +1,8 @@
-using Exiled.API.Interfaces;
 using System.ComponentModel;
 
 namespace JoinQueuePatch
 {
-	public sealed class Config : IConfig
+	public class Config
 	{
 		[Description("Whether the plugin is enabled.")]
 		public bool IsEnabled { get; set; } = true;
