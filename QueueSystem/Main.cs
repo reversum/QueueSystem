@@ -72,7 +72,8 @@ namespace JoinQueuePatch
 					string hintMessage = messageTemplate
 						.Replace("{queue_count}", Plugin.Instance.WaitingQueue.Count.ToString())
 						.Replace("{position}", position.ToString())
-						.Replace("{round_time}", Round.ElapsedTime.ToString(@"mm\:ss"));
+						.Replace("{round_time}", Round.ElapsedTime.ToString(@"mm\:ss"))
+						.Replace("{servername}", Server.Name);
 
 					Plugin.Instance.SendHint(
 						queue.PlayerAuthenticationManager,
