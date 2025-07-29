@@ -15,6 +15,7 @@ queue_hint_message: |-
 
   <size=18>Round time <color=#2F4F4F>»</color> <color=#C0C0C0>{round_time} elapsed</color>
 queue_leave_hint_message: <color=green>You will now join!</color>
+# Priority order of queue groups. Higher in the list = higher priority.
 queue_group_priority:
 - moderator
 - owner
