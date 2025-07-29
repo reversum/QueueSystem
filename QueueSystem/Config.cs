@@ -1,4 +1,5 @@
 using Exiled.API.Interfaces;
+using System.Collections.Generic;
 using System.ComponentModel;
 
 namespace JoinQueuePatch
@@ -18,5 +19,8 @@ namespace JoinQueuePatch
 	"<size=18>Round time <color=#2F4F4F>»</color> <color=#C0C0C0>{round_time} elapsed</color>";
 
 		public string QueueLeaveHintMessage { get; set; } = "<color=green>You will now join!</color>";
+
+		[Description("Priority order of queue groups. Higher in the list = higher priority.")]
+		public List<string> QueueGroupPriority { get; set; } = new List<string> { "moderator", "owner" };
 	}
 }

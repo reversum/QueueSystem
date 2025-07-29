@@ -13,6 +13,14 @@ namespace JoinQueuePatch.HarmonyPatches
 			int currentPlayers = Player.List.Count;
 			int maxPlayers = Server.MaxPlayerCount;
 
+			if (msg.SignedAuthToken.TryGetToken<AuthenticationToken>("Authentication", out var token1, out var error1, out var userId))
+			{
+				if (!string.IsNullOrEmpty(userId))
+				{
+					if (ReservedSlot.HasReservedSlot(userId)) return true;
+				}
+			}
+
 			if (currentPlayers >= maxPlayers)
 			{
 				if (!Plugin.Instance.IsInQueue(__instance)) 
