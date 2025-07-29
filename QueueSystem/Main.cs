@@ -101,7 +101,9 @@ namespace JoinQueuePatch
 			while (WaitingQueue.Count > 0)
 			{
 				var item = WaitingQueue.Dequeue();
-				if (item.PlayerAuthenticationManager._hub != hub)
+				var itemhub = (ReferenceHub)AccessTools.Field(typeof(PlayerAuthenticationManager), "_hub")?.GetValue(item.PlayerAuthenticationManager);
+
+				if (itemhub != hub)
 				{
 					newQueue.Enqueue(item);
 				}
