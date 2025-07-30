@@ -405,6 +405,7 @@
     <Compile Include="HarmonyPatches\IsServerFullPatch.cs" />
     <Compile Include="HarmonyPatches\ProcessAuthenticationReponsePatch.cs" />
     <Compile Include="HarmonyPatches\RejectAuthenticationPatch.cs" />
+    <Compile Include="HarmonyPatches\SkipRemovePlayerPatch.cs" />
     <Compile Include="HarmonyPatches\SkipAddPlayerPatch.cs" />
     <Compile Include="Main.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
