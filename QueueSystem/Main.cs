@@ -164,7 +164,10 @@ namespace JoinQueuePatch
 				groupName = userGroup?.Name;
 			}
 
-			return map.TryGetValue(groupName, out var prio) ? prio : -1;
+			if (groupName == null)
+				return 999;
+
+			return map.TryGetValue(groupName, out var prio) ? prio : 999;
 		}
 
 		public static void ProcessQueue()
