@@ -14,6 +14,8 @@ using LabApi.Features.Wrappers;
 using LabApi.Features.Console;
 using UnityEngine;
 using Logger = LabApi.Features.Console.Logger;
+using CommandSystem;
+using Mirror;
 
 namespace JoinQueuePatch
 {
@@ -99,9 +101,17 @@ namespace JoinQueuePatch
 
 		public bool IsInQueue(PlayerAuthenticationManager auth)
 		{
-			return WaitingQueue.FirstOrDefault(x => x.PlayerAuthenticationManager._hub == auth._hub) != null;
+			var hubField = AccessTools.Field(typeof(PlayerAuthenticationManager), "_hub");
+			var authHub = hubField.GetValue(auth);
+
+			return WaitingQueue.Any(x =>
+			{
+				var queueAuth = x.PlayerAuthenticationManager;
+				var queueHub = hubField.GetValue(queueAuth);
+				return Equals(queueHub, authHub);
+			});
 		}
-		public static bool IsInQueue(ReferenceHub hub)
+		public bool IsInQueue(ReferenceHub hub)
 		{
 			var hubField = AccessTools.Field(typeof(PlayerAuthenticationManager), "_hub");
 			foreach (var item in Instance.WaitingQueue)
@@ -176,7 +186,10 @@ namespace JoinQueuePatch
 				groupName = userGroup?.Name;
 			}
 
-			return map.TryGetValue(groupName, out var prio) ? prio : -1;
+			if (groupName == null)
+				return 999;
+
+			return map.TryGetValue(groupName, out var prio) ? prio : 999;
 		}
 
 		public static void ProcessQueue()
@@ -192,7 +205,7 @@ namespace JoinQueuePatch
 			Instance.WaitingQueue = new Queue<QueueItem>(sorted);
 			int activePlayers = Player.List.Count(p => p.IsReady == true && !p.IsHost);
 
-			while (Instance.WaitingQueue.Count > 0 && activePlayers - 1 < Server.MaxPlayers)
+			if (Instance.WaitingQueue.Count > 0 && activePlayers - 1 < Server.MaxPlayers)
 			{
 				var next = Instance.WaitingQueue.Dequeue();
 				var manager = next.PlayerAuthenticationManager;
@@ -215,8 +228,6 @@ namespace JoinQueuePatch
 				{
 					processMethod?.Invoke(manager, new object[] { authResponse });
 				});
-
-				break;
 			}
 		}
 	}
