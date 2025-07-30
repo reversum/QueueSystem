@@ -84,11 +84,19 @@ namespace JoinQueuePatch
 				yield return Timing.WaitForSeconds(1f);
 			}
 		}
-
 		public bool IsInQueue(PlayerAuthenticationManager auth)
 		{
-			return WaitingQueue.FirstOrDefault(x => x.PlayerAuthenticationManager._hub == auth._hub) != null;
+			var hubField = AccessTools.Field(typeof(PlayerAuthenticationManager), "_hub");
+			var authHub = hubField.GetValue(auth);
+
+			return WaitingQueue.Any(x =>
+			{
+				var queueAuth = x.PlayerAuthenticationManager;
+				var queueHub = hubField.GetValue(queueAuth);
+				return Equals(queueHub, authHub);
+			});
 		}
+
 		public static bool IsInQueue(ReferenceHub hub)
 		{
 			var hubField = AccessTools.Field(typeof(PlayerAuthenticationManager), "_hub");
