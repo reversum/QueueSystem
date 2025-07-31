@@ -22,7 +22,6 @@ namespace JoinQueuePatch
 			harmony = new Harmony("de.yannik.scpsl.joinqueue");
 			harmony.PatchAll();
 			Exiled.Events.Handlers.Player.Left += OnPlayerLeft;
-			Exiled.Events.Handlers.Server.RoundStarted += OnRoundStart;
 
 			WaitingQueue = new();
 			Instance = this;
@@ -33,7 +32,6 @@ namespace JoinQueuePatch
 		{
 			harmony.UnpatchAll("de.yannik.scpsl.joinqueue");
 			Exiled.Events.Handlers.Player.Left -= OnPlayerLeft;
-			Exiled.Events.Handlers.Server.RoundStarted -= OnRoundStart;
 			Timing.KillCoroutines();
 		}
 
@@ -45,14 +43,6 @@ namespace JoinQueuePatch
 				return;
 			}
 			ProcessQueue();  
-		}
-
-		private void OnRoundStart()
-		{
-			Timing.CallDelayed(0.1f, () =>
-			{
-				GameObject.Find("StartRound").transform.localScale = Vector3.zero;
-			});
 		}
 
 		public IEnumerator<float> QueueHintCoroutine()
@@ -67,15 +57,15 @@ namespace JoinQueuePatch
 
 					int position = (found == null) ? -1 : found.index + 1;
 
-					var messageTemplate = Plugin.Instance.Config.QueueHintMessage;
+					var messageTemplate = Instance.Config.QueueHintMessage;
 
 					string hintMessage = messageTemplate
-						.Replace("{queue_count}", Plugin.Instance.WaitingQueue.Count.ToString())
+						.Replace("{queue_count}", Instance.WaitingQueue.Count.ToString())
 						.Replace("{position}", position.ToString())
 						.Replace("{round_time}", Round.ElapsedTime.ToString(@"mm\:ss"))
 						.Replace("{servername}", Server.Name);
 
-					Plugin.Instance.SendHint(
+					Instance.SendHint(
 						queue.PlayerAuthenticationManager,
 						hintMessage,
 						3f
@@ -86,24 +76,22 @@ namespace JoinQueuePatch
 		}
 		public bool IsInQueue(PlayerAuthenticationManager auth)
 		{
-			var hubField = AccessTools.Field(typeof(PlayerAuthenticationManager), "_hub");
-			var authHub = hubField.GetValue(auth);
+			var authHub = auth._hub;
 
 			return WaitingQueue.Any(x =>
 			{
 				var queueAuth = x.PlayerAuthenticationManager;
-				var queueHub = hubField.GetValue(queueAuth);
+				var queueHub = queueAuth._hub;
 				return Equals(queueHub, authHub);
 			});
 		}
 
 		public static bool IsInQueue(ReferenceHub hub)
 		{
-			var hubField = AccessTools.Field(typeof(PlayerAuthenticationManager), "_hub");
 			foreach (var item in Instance.WaitingQueue)
 			{
 				var mgr = item.PlayerAuthenticationManager;
-				var managerHub = (ReferenceHub)hubField.GetValue(mgr);
+				var managerHub = mgr._hub;
 				if (managerHub == hub)
 					return true;
 			}
@@ -119,7 +107,7 @@ namespace JoinQueuePatch
 			while (WaitingQueue.Count > 0)
 			{
 				var item = WaitingQueue.Dequeue();
-				var itemhub = (ReferenceHub)AccessTools.Field(typeof(PlayerAuthenticationManager), "_hub")?.GetValue(item.PlayerAuthenticationManager);
+				var itemhub = item.PlayerAuthenticationManager._hub;
 
 				if (itemhub != hub)
 				{
@@ -132,6 +120,7 @@ namespace JoinQueuePatch
 
 		public void ShowHint(ReferenceHub hub, string message, float duration = 3f)
 		{
+			hub.hints.Show()
 			ShowHint(hub, message, new HintParameter[1]
 			{
 			new StringHintParameter(message)
@@ -153,7 +142,7 @@ namespace JoinQueuePatch
 
 		public void SendHint(PlayerAuthenticationManager manager, string message, float duration = 3f)
 		{
-			var hub = (ReferenceHub)AccessTools.Field(typeof(PlayerAuthenticationManager), "_hub")?.GetValue(manager);
+			var hub = manager._hub;
 
 			if (hub?.hints != null)
 			{
@@ -198,20 +187,12 @@ namespace JoinQueuePatch
 
 				Instance.SendHint(manager, Instance.Config.QueueLeaveHintMessage);
 
-				var authRequestedField = typeof(CentralAuth.PlayerAuthenticationManager)
-					.GetField("_authenticationRequested", BindingFlags.Instance | BindingFlags.NonPublic);
-				authRequestedField?.SetValue(manager, true);
-
-				var timeoutTimerField = typeof(CentralAuth.PlayerAuthenticationManager)
-					.GetField("_timeoutTimer", BindingFlags.Instance | BindingFlags.NonPublic);
-				timeoutTimerField?.SetValue(manager, 0f);
-
-				var processMethod = typeof(CentralAuth.PlayerAuthenticationManager)
-					.GetMethod("ProcessAuthenticationResponse", BindingFlags.Instance | BindingFlags.NonPublic);
+				manager._authenticationRequested = true;
+				manager._timeoutTimer = 0f;
 
 				Timing.CallDelayed(1f, () =>
 				{
-					processMethod?.Invoke(manager, new object[] { authResponse });
+					manager.ProcessAuthenticationResponse(authResponse);
 				});
 
 				break;
