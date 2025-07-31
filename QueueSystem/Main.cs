@@ -65,8 +65,8 @@ namespace JoinQueuePatch
 						.Replace("{round_time}", Round.ElapsedTime.ToString(@"mm\:ss"))
 						.Replace("{servername}", Server.Name);
 
-					Instance.SendHint(
-						queue.PlayerAuthenticationManager,
+					Instance.ShowHint(
+						queue.PlayerAuthenticationManager._hub,
 						hintMessage,
 						3f
 					);
@@ -120,34 +120,10 @@ namespace JoinQueuePatch
 
 		public void ShowHint(ReferenceHub hub, string message, float duration = 3f)
 		{
-			hub.hints.Show()
-			ShowHint(hub, message, new HintParameter[1]
+			hub.hints.Show(new TextHint(message, new HintParameter[1]
 			{
-			new StringHintParameter(message)
-			}, null, duration);
-		}
-		
-		public void ShowHint(ReferenceHub hub, string message, HintParameter[] hintParameters, HintEffect[] hintEffects, float duration = 3f)
-		{
-			if (message == null)
-			{
-				message = string.Empty;
-			}
-
-			hub.hints.Show(new TextHint(message, (!hintParameters.IsEmpty()) ? hintParameters : new HintParameter[1]
-			{
-			new StringHintParameter(message)
-			}, hintEffects, duration));
-		}
-
-		public void SendHint(PlayerAuthenticationManager manager, string message, float duration = 3f)
-		{
-			var hub = manager._hub;
-
-			if (hub?.hints != null)
-			{
-				ShowHint(hub, message, duration);
-			}
+			new StringHintParameter(string.Empty)
+			}, new HintEffect[0], duration));
 		}
 
 		private static int GetPriority(QueueItem item, Dictionary<string, int> map)
@@ -185,7 +161,7 @@ namespace JoinQueuePatch
 				var manager = next.PlayerAuthenticationManager;
 				var authResponse = next.AuthenticationResponse;
 
-				Instance.SendHint(manager, Instance.Config.QueueLeaveHintMessage);
+				Instance.ShowHint(manager._hub, Instance.Config.QueueLeaveHintMessage);
 
 				manager._authenticationRequested = true;
 				manager._timeoutTimer = 0f;
