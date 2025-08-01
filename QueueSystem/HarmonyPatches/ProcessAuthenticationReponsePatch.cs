@@ -1,6 +1,9 @@
 using CentralAuth;
+using Cryptography;
 using Exiled.API.Features;
 using HarmonyLib;
+using NorthwoodLib;
+using YamlDotNet.Core.Tokens;
 
 namespace JoinQueuePatch.HarmonyPatches
 {
@@ -21,9 +24,27 @@ namespace JoinQueuePatch.HarmonyPatches
 				}
 			}
 
-			if (Plugin.Instance.Config.AllowNWStaffToSkipQueue && msg.BadgeToken != null && msg.BadgeToken.Staff)
+			if (Plugin.Instance.Config.AllowNWStaffToSkipQueue)
 			{
-				return true;
+				if (msg.SignedBadgeToken.TryGetToken<BadgeToken>("Badge request", out var token2, out var error2, out string _))
+				{
+					bool success = true;
+
+					if (token2.Serial != msg.AuthToken.Serial)
+					{
+						success = false;
+					}
+					if (token2.UserId != Sha.HashToString(Sha.Sha512(__instance.SaltedUserId)))
+					{
+						success = false;
+					}
+					if (StringUtils.Base64Decode(token2.Nickname) != __instance._hub.nicknameSync.MyNick)
+					{
+						success = false;
+					}
+
+					if (success && token2.Staff) return true;
+				}
 			}
 
 			if (currentPlayers >= maxPlayers)
