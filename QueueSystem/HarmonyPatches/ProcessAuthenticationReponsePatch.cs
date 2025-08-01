@@ -10,6 +10,7 @@ namespace JoinQueuePatch.HarmonyPatches
 {
 	[HarmonyPatch(typeof(PlayerAuthenticationManager), nameof(PlayerAuthenticationManager.ProcessAuthenticationResponse))]
 	[HarmonyPriority(Priority.First)]
+	[HarmonyDebug]
 	internal static class QueuePatch
 	{
 		static bool Prefix(PlayerAuthenticationManager __instance, CentralAuth.AuthenticationResponse msg)
@@ -25,26 +26,26 @@ namespace JoinQueuePatch.HarmonyPatches
 				}
 			}
 
-			if (Plugin.Instance.Config.AllowNWStaffToSkipQueue)
+			if (Plugin.Instance.Config.AllowNWStaffToSkipQueue && msg.SignedBadgeToken != null && msg.AuthToken != null)
 			{
-				if (msg.SignedBadgeToken.TryGetToken<BadgeToken>("Badge request", out var token2, out var error2, out string _))
+				if (msg.SignedBadgeToken.TryGetToken<BadgeToken>(
+					"Badge request", out var token2, out var error2, out string _))
 				{
-					bool success = true;
+					if (token2 != null && __instance?.SaltedUserId != null && __instance?._hub?.nicknameSync != null)
+					{
+						bool success = true;
 
-					if (token2.Serial != msg.AuthToken.Serial)
-					{
-						success = false;
-					}
-					if (token2.UserId != Sha.HashToString(Sha.Sha512(__instance.SaltedUserId)))
-					{
-						success = false;
-					}
-					if (StringUtils.Base64Decode(token2.Nickname) != __instance._hub.nicknameSync.MyNick)
-					{
-						success = false;
-					}
+						if (token2.Serial != msg.AuthToken.Serial)
+							success = false;
 
-					if (success && token2.Staff) return true;
+						if (token2.UserId != Sha.HashToString(Sha.Sha512(__instance.SaltedUserId)))
+							success = false;
+
+						if (StringUtils.Base64Decode(token2.Nickname) != __instance._hub.nicknameSync.MyNick)
+							success = false;
+
+						if (success && token2.Staff) return true;
+					}
 				}
 			}
 
