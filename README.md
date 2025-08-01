@@ -19,6 +19,8 @@ queue_leave_hint_message: <color=green>You will now join!</color>
 queue_group_priority:
 - moderator
 - owner
+# Allows NW Staff to always skip the queue.
+allow_n_w_staff_to_skip_queue: true
 ```
 
 <img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/460bc523-1155-4da9-bd2e-f1854a4f5e6a" />
