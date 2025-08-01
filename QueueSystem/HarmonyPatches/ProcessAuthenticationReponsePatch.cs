@@ -21,6 +21,11 @@ namespace JoinQueuePatch.HarmonyPatches
 				}
 			}
 
+			if (Plugin.Instance.Config.AllowNWStaffToSkipQueue && msg.BadgeToken != null && msg.BadgeToken.Staff)
+			{
+				return true;
+			}
+
 			if (currentPlayers >= maxPlayers)
 			{
 				if (!Plugin.Instance.IsInQueue(__instance)) 

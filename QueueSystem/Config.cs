@@ -22,5 +22,8 @@ namespace JoinQueuePatch
 
 		[Description("Priority order of queue groups. Higher in the list = higher priority.")]
 		public List<string> QueueGroupPriority { get; set; } = new List<string> { "moderator", "owner" };
+
+		[Description("Allows NW Staff to always skip the queue.")]
+		public bool AllowNWStaffToSkipQueue { get; set; } = true;
 	}
 }
