@@ -24,5 +24,11 @@ namespace JoinQueuePatch
 
 		[Description("Allows NW Staff to always skip the queue.")]
 		public bool AllowNWStaffToSkipQueue { get; set; } = true;
+
+		[Description("Allows people with a ReservedSlot to always skip the queue.")]
+		public bool SkipWithReservedSlot { get; set; } = true;
+
+		[Description("Subtract the number of people online with reserved slots so that players can still join.")]
+		public bool SubtractReservedSlots { get; set; } = false;
 	}
 }

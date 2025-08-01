@@ -10,13 +10,23 @@ namespace JoinQueuePatch.HarmonyPatches
 {
 	[HarmonyPatch(typeof(PlayerAuthenticationManager), nameof(PlayerAuthenticationManager.ProcessAuthenticationResponse))]
 	[HarmonyPriority(Priority.First)]
-	[HarmonyDebug]
 	internal static class QueuePatch
 	{
 		static bool Prefix(PlayerAuthenticationManager __instance, CentralAuth.AuthenticationResponse msg)
 		{
 			int currentPlayers = Player.List.Count(p => p.IsReady == true && !p.IsHost);
 			int maxPlayers = Server.MaxPlayers;
+
+			if (Plugin.Instance.Config.SubtractReservedSlots)
+			{
+				int reservedCount = Player.List.Count(p =>
+				{
+					return !string.IsNullOrEmpty(p.UserId) && ReservedSlot.HasReservedSlot(p.UserId);
+				});
+
+				currentPlayers -= reservedCount;
+				if (currentPlayers < 0) currentPlayers = 0;
+			}
 ;
 			if (msg.SignedAuthToken.TryGetToken<AuthenticationToken>("Authentication", out var token1, out var error1, out var userId))
 			{
