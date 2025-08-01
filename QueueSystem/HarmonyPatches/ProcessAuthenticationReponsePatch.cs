@@ -3,6 +3,7 @@ using Cryptography;
 using Exiled.API.Features;
 using HarmonyLib;
 using NorthwoodLib;
+using System.Linq;
 using YamlDotNet.Core.Tokens;
 
 namespace JoinQueuePatch.HarmonyPatches
@@ -16,11 +17,25 @@ namespace JoinQueuePatch.HarmonyPatches
 			int currentPlayers = Player.List.Count;
 			int maxPlayers = Server.MaxPlayerCount;
 
-			if (msg.SignedAuthToken.TryGetToken<AuthenticationToken>("Authentication", out var token1, out var error1, out var userId))
+			if (Plugin.Instance.Config.SubtractReservedSlots)
 			{
-				if (!string.IsNullOrEmpty(userId))
+				int reservedCount = Player.List.Count(p =>
 				{
-					if (ReservedSlot.HasReservedSlot(userId)) return true;
+					return !string.IsNullOrEmpty(p.UserId) && ReservedSlot.HasReservedSlot(p.UserId);
+				});
+
+				currentPlayers -= reservedCount;
+				if (currentPlayers < 0) currentPlayers = 0;
+			}
+
+			if (Plugin.Instance.Config.SkipWithReservedSlot)
+			{
+				if (msg.SignedAuthToken.TryGetToken<AuthenticationToken>("Authentication", out var token1, out var error1, out var userId))
+				{
+					if (!string.IsNullOrEmpty(userId))
+					{
+						if (ReservedSlot.HasReservedSlot(userId)) return true;
+					}
 				}
 			}
 
