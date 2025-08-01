@@ -27,12 +27,15 @@ namespace JoinQueuePatch.HarmonyPatches
 				currentPlayers -= reservedCount;
 				if (currentPlayers < 0) currentPlayers = 0;
 			}
-;
-			if (msg.SignedAuthToken.TryGetToken<AuthenticationToken>("Authentication", out var token1, out var error1, out var userId))
+
+			if (Plugin.Instance.Config.SkipWithReservedSlot)
 			{
-				if (!string.IsNullOrEmpty(userId))
+				if (msg.SignedAuthToken.TryGetToken<AuthenticationToken>("Authentication", out var token1, out var error1, out var userId))
 				{
-					if (ReservedSlot.HasReservedSlot(userId)) return true;
+					if (!string.IsNullOrEmpty(userId))
+					{
+						if (ReservedSlot.HasReservedSlot(userId)) return true;
+					}
 				}
 			}
 
