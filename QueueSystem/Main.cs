@@ -8,12 +8,16 @@ using UnityEngine;
 using MEC;
 using System.Reflection;
 using System.Linq;
+using System;
 
 namespace JoinQueuePatch
 {
 	public class Plugin : Plugin<Config>
 	{
 		public static Plugin Instance;
+		public override string Name => "QueueSystem";
+		public override string Author => "yannikaufdie1";
+		public override Version RequiredExiledVersion => new Version(9, 7, 0);
 		private Harmony harmony;
 		public Queue<QueueItem> WaitingQueue = new();
 
