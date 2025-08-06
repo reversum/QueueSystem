@@ -29,7 +29,7 @@ namespace JoinQueuePatch
 
 		public static Plugin Instance;
 		private Harmony harmony;
-		public Queue<QueueItem> WaitingQueue = new();
+		public List<QueueItem> WaitingQueue = new();
 
 		public override void Enable()
 		{
@@ -46,6 +46,7 @@ namespace JoinQueuePatch
 		{
 			harmony.UnpatchAll("de.yannik.scpsl.joinqueue");
 			PlayerEvents.Left -= OnPlayerLeft;
+
 			Timing.KillCoroutines();
 		}
 
@@ -93,7 +94,7 @@ namespace JoinQueuePatch
 		{
 			var authHub = auth._hub;
 
-			return WaitingQueue.Any(x =>
+			return Instance.WaitingQueue.Any(x =>
 			{
 				var queueAuth = x.PlayerAuthenticationManager;
 				var queueHub = queueAuth._hub;
@@ -101,7 +102,7 @@ namespace JoinQueuePatch
 			});
 		}
 
-		public static bool IsInQueue(ReferenceHub hub)
+		public bool IsInQueue(ReferenceHub hub)
 		{
 			foreach (var item in Instance.WaitingQueue)
 			{
@@ -118,19 +119,7 @@ namespace JoinQueuePatch
 			if (WaitingQueue.Count == 0)
 				return;
 
-			var newQueue = new Queue<QueueItem>();
-			while (WaitingQueue.Count > 0)
-			{
-				var item = WaitingQueue.Dequeue();
-				var itemhub = item.PlayerAuthenticationManager._hub;
-
-				if (itemhub != hub)
-				{
-					newQueue.Enqueue(item);
-				}
-			}
-
-			WaitingQueue = newQueue;
+			WaitingQueue.RemoveAll(item => item.PlayerAuthenticationManager._hub == hub);
 		}
 
 		public void ShowHint(ReferenceHub hub, string message, float duration = 3f)
@@ -164,16 +153,17 @@ namespace JoinQueuePatch
 				.Select((grp, idx) => new { grp, idx })
 				.ToDictionary(x => x.grp, x => x.idx);
 
-			var sorted = Instance.WaitingQueue
+			Instance.WaitingQueue = Instance.WaitingQueue
 				.OrderBy(item => GetPriority(item, priorityMap))
 				.ToList();
 
-			Instance.WaitingQueue = new Queue<QueueItem>(sorted);
-			int activePlayers = Player.List.Count(p => p.IsReady == true && !p.IsHost);
+			int activePlayers = Player.List.Count(p => p.IsReady && !p.IsHost);
 
 			if (Instance.WaitingQueue.Count > 0 && activePlayers - 1 < Server.MaxPlayers)
 			{
-				var next = Instance.WaitingQueue.Dequeue();
+				var next = Instance.WaitingQueue[0];
+				Instance.WaitingQueue.RemoveAt(0);
+
 				var manager = next.PlayerAuthenticationManager;
 				var authResponse = next.AuthenticationResponse;
 

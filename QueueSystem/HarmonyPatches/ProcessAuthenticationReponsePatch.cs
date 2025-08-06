@@ -5,6 +5,9 @@ using LabApi.Features.Console;
 using System.Linq;
 using Cryptography;
 using NorthwoodLib;
+using static PlayerRoles.PlayerRoleManager;
+using InventorySystem;
+using PlayerStatsSystem;
 
 namespace JoinQueuePatch.HarmonyPatches
 {
@@ -66,7 +69,7 @@ namespace JoinQueuePatch.HarmonyPatches
 			{
 				if (!Plugin.Instance.IsInQueue(__instance)) 
 				{
-					Plugin.Instance.WaitingQueue.Enqueue(new QueueItem() { PlayerAuthenticationManager = __instance, AuthenticationResponse = msg });
+					Plugin.Instance.WaitingQueue.Add(new QueueItem() { PlayerAuthenticationManager = __instance, AuthenticationResponse = msg });
 				}
 				return false;
 			}
