@@ -25,6 +25,10 @@ queue_group_priority:
 - owner
 # Allows NW Staff to always skip the queue.
 allow_n_w_staff_to_skip_queue: true
+# Allows people with a ReservedSlot to always skip the queue.
+skip_with_reserved_slot: true
+# Subtract the number of people online with reserved slots so that players can still join.
+subtract_reserved_slots: false
 ```
 
 <img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/fdec53df-5530-4376-942a-402db695d593" />
