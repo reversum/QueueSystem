@@ -19,7 +19,7 @@ namespace JoinQueuePatch
 		public override string Author => "yannikaufdie1";
 		public override Version RequiredExiledVersion => new Version(9, 7, 0);
 		private Harmony harmony;
-		public Queue<QueueItem> WaitingQueue = new();
+		public List<QueueItem> WaitingQueue = new();
 
 		public override void OnEnabled()
 		{
@@ -107,19 +107,7 @@ namespace JoinQueuePatch
 			if (WaitingQueue.Count == 0)
 				return;
 
-			var newQueue = new Queue<QueueItem>();
-			while (WaitingQueue.Count > 0)
-			{
-				var item = WaitingQueue.Dequeue();
-				var itemhub = item.PlayerAuthenticationManager._hub;
-
-				if (itemhub != hub)
-				{
-					newQueue.Enqueue(item);
-				}
-			}
-
-			WaitingQueue = newQueue;
+			WaitingQueue.RemoveAll(item => item.PlayerAuthenticationManager._hub == hub);
 		}
 
 		public void ShowHint(ReferenceHub hub, string message, float duration = 3f)
@@ -153,15 +141,15 @@ namespace JoinQueuePatch
 				.Select((grp, idx) => new { grp, idx })
 				.ToDictionary(x => x.grp, x => x.idx);
 
-			var sorted = Instance.WaitingQueue
+			Instance.WaitingQueue = Instance.WaitingQueue
 				.OrderBy(item => GetPriority(item, priorityMap))
 				.ToList();
 
-			Instance.WaitingQueue = new Queue<QueueItem>(sorted);
-
 			while (Instance.WaitingQueue.Count > 0 && Player.List.Count - 1 < Server.MaxPlayerCount)
 			{
-				var next = Instance.WaitingQueue.Dequeue();
+				var next = Instance.WaitingQueue[0];
+				Instance.WaitingQueue.RemoveAt(0);
+
 				var manager = next.PlayerAuthenticationManager;
 				var authResponse = next.AuthenticationResponse;
 

@@ -66,7 +66,7 @@ namespace JoinQueuePatch.HarmonyPatches
 			{
 				if (!Plugin.Instance.IsInQueue(__instance)) 
 				{
-					Plugin.Instance.WaitingQueue.Enqueue(new QueueItem() { PlayerAuthenticationManager = __instance, AuthenticationResponse = msg });
+					Plugin.Instance.WaitingQueue.Add(new QueueItem() { PlayerAuthenticationManager = __instance, AuthenticationResponse = msg });
 				}
 				return false;
 			}
