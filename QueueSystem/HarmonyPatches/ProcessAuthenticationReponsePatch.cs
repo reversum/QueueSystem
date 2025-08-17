@@ -32,7 +32,15 @@ namespace JoinQueuePatch.HarmonyPatches
 			{
 				int reservedCount = Player.List.Count(p =>
 				{
-					return !string.IsNullOrEmpty(p.UserId) && ReservedSlot.HasReservedSlot(p.UserId);
+					if (string.IsNullOrEmpty(p.UserId)) return false;
+
+					#if CedMod
+					        if (PluginLoader.Plugins.Any(pl => pl.Key.Name == "CedMod") &&
+					            CedMod.Addons.QuerySystem.QuerySystem.ReservedSlotUserids.Contains(p.UserId))
+					            return true;
+					#endif
+
+					return ReservedSlot.HasReservedSlot(p.UserId);
 				});
 
 				currentPlayers -= reservedCount;
