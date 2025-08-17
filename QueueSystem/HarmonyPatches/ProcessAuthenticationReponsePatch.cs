@@ -1,13 +1,21 @@
+using System;
+using System.Collections.Generic;
 using CentralAuth;
 using HarmonyLib;
 using LabApi.Features.Wrappers;
 using LabApi.Features.Console;
 using System.Linq;
+using System.Reflection;
 using Cryptography;
 using NorthwoodLib;
 using static PlayerRoles.PlayerRoleManager;
 using InventorySystem;
+using LabApi.Loader;
 using PlayerStatsSystem;
+
+#if CedMod
+using QuerySys = CedMod.Addons.QuerySystem.QuerySystem;
+#endif
 
 namespace JoinQueuePatch.HarmonyPatches
 {
@@ -31,21 +39,24 @@ namespace JoinQueuePatch.HarmonyPatches
 				if (currentPlayers < 0) currentPlayers = 0;
 			}
 
-			if (Plugin.Instance.Config.SkipWithReservedSlot)
+			if (Plugin.Instance.Config.SkipWithReservedSlot &&
+			    msg.SignedAuthToken.TryGetToken<AuthenticationToken>("Authentication", out var token1, out var error1,
+				    out var userId) &&
+			    !string.IsNullOrEmpty(userId))
 			{
-				if (msg.SignedAuthToken.TryGetToken<AuthenticationToken>("Authentication", out var token1, out var error1, out var userId))
-				{
-					if (!string.IsNullOrEmpty(userId))
-					{
-						if (ReservedSlot.HasReservedSlot(userId)) return true;
-					}
-				}
+				#if CedMod
+				    if (PluginLoader.Plugins.Any(p => string.Equals(p.Key.Name, "CedMod", StringComparison.OrdinalIgnoreCase)) &&
+				        QuerySys.ReservedSlotUserids.Contains(userId))
+				        return true;
+				#endif
+
+				if (ReservedSlot.HasReservedSlot(userId)) return true;
 			}
 
 			if (Plugin.Instance.Config.AllowNWStaffToSkipQueue && msg.SignedBadgeToken != null && msg.AuthToken != null)
 			{
 				if (msg.SignedBadgeToken.TryGetToken<BadgeToken>(
-					"Badge request", out var token2, out var error2, out string _))
+					    "Badge request", out var token2, out var error2, out string _))
 				{
 					if (token2 != null && __instance?.SaltedUserId != null && __instance?._hub?.nicknameSync != null)
 					{
@@ -67,12 +78,15 @@ namespace JoinQueuePatch.HarmonyPatches
 
 			if (currentPlayers >= maxPlayers)
 			{
-				if (!Plugin.Instance.IsInQueue(__instance)) 
+				if (!Plugin.Instance.IsInQueue(__instance))
 				{
-					Plugin.Instance.WaitingQueue.Add(new QueueItem() { PlayerAuthenticationManager = __instance, AuthenticationResponse = msg });
+					Plugin.Instance.WaitingQueue.Add(new QueueItem()
+						{ PlayerAuthenticationManager = __instance, AuthenticationResponse = msg });
 				}
+
 				return false;
 			}
+
 			return true;
 		}
 	}

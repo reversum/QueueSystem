@@ -19,7 +19,8 @@
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <DebugSymbols>true</DebugSymbols>
+	  <DefineConstants>DEBUG;TRACE;CedMod</DefineConstants>
+	  <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
     <OutputPath>..\..\..\..\AppData\Roaming\EXILED\Plugins\</OutputPath>
@@ -29,7 +30,8 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <DebugType>pdbonly</DebugType>
+	  <DefineConstants>TRACE;CedMod</DefineConstants>
+	  <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
     <OutputPath>bin\Release\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
@@ -397,6 +399,11 @@
       <HintPath>..\packages\ExMod.Exiled.9.6.3\lib\net48\YamlDotNet.dll</HintPath>
     </Reference>
   </ItemGroup>
+	<ItemGroup>
+		<Reference Include="CedMod">
+			<HintPath>..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\SCP Secret Laboratory Dedicated Server\SCPSL_Data\Managed\CedModV3.dll</HintPath>
+		</Reference>
+	</ItemGroup>
   <ItemGroup>
     <Compile Include="Config.cs" />
     <Compile Include="HarmonyPatches\IsServerFullPatch.cs" />
