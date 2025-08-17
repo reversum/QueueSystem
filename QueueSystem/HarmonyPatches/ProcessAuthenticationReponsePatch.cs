@@ -6,6 +6,10 @@ using NorthwoodLib;
 using System.Linq;
 using YamlDotNet.Core.Tokens;
 
+#if CedMod
+using QuerySys = CedMod.Addons.QuerySystem.QuerySystem;
+#endif
+
 namespace JoinQueuePatch.HarmonyPatches
 {
 	[HarmonyPatch(typeof(PlayerAuthenticationManager), nameof(PlayerAuthenticationManager.ProcessAuthenticationResponse))]
@@ -28,15 +32,17 @@ namespace JoinQueuePatch.HarmonyPatches
 				if (currentPlayers < 0) currentPlayers = 0;
 			}
 
-			if (Plugin.Instance.Config.SkipWithReservedSlot)
+			if (Plugin.Instance.Config.SkipWithReservedSlot &&
+			    msg.SignedAuthToken.TryGetToken<AuthenticationToken>("Authentication", out var token1, out var error1, out var userId) &&
+			    !string.IsNullOrEmpty(userId))
 			{
-				if (msg.SignedAuthToken.TryGetToken<AuthenticationToken>("Authentication", out var token1, out var error1, out var userId))
-				{
-					if (!string.IsNullOrEmpty(userId))
-					{
-						if (ReservedSlot.HasReservedSlot(userId)) return true;
-					}
-				}
+				#if CedMod
+				    if (PluginLoader.Plugins.Any(p => string.Equals(p.Key.Name, "CedMod", StringComparison.OrdinalIgnoreCase)) &&
+				        QuerySys.ReservedSlotUserids.Contains(userId))
+				        return true;
+				#endif
+
+				if (ReservedSlot.HasReservedSlot(userId)) return true;
 			}
 
 			if (Plugin.Instance.Config.AllowNWStaffToSkipQueue && msg.SignedBadgeToken != null && msg.AuthToken != null)
